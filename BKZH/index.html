@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>პირადი სივრცე</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: #0b0f19; 
+            color: #f3f4f6; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 1200px; 
+            background: #0b0f19;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page { display: none; width: 100%; }
+        .page.active { display: flex; flex-direction: column; }
+
+        /* ავტორიზაციის გვერდი */
+        #login.page.active {
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        .login-card {
+            background: #1f2937;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #374151;
+            text-align: center;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h1 { color: #38bdf8; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
+        
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 15px;
+        }
+
+        .btn { 
+            background-color: #38bdf8; 
+            color: #0b0f19; 
+            padding: 8px 18px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 600; 
+            text-decoration: none;
+            transition: all 0.2s ease; 
+        }
+        .btn:hover { background-color: #0ea5e9; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #9ca3af; font-size: 13px; }
+        input[type="password"] { width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 6px; font-size: 16px; background: #111827; color: white; }
+        input[type="password"]:focus { border-color: #38bdf8; outline: none; }
+        .error-msg { color: #f87171; margin-top: 8px; display: none; font-size: 13px; font-weight: 600; }
+        
+        /* 2 დიდი ვერტიკალური მწკრივი */
+        .dashboard-grid { 
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* ჰორიზონტალური წყვილები (ორი ბლოკი გვერდიგვერდ) */
+        .row-box { 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .row-box { grid-template-columns: 1fr; }
+        }
+        
+        /* მთავარი ყუთების სტილი */
+        .sub-box { 
+            background: #1f2937; 
+            border: 1px solid #374151; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .sub-box h3 { color: #9ca3af; font-size: 16px; font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #374151; padding-bottom: 8px; }
+        
+        /* ყუთის შიდა სტრუქტურა */
+        .box-content {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* ფოტოების სვეტი (უჭირავს 45%) */
+        .photo-side {
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        /* ტექსტების სვეტი (უჭირავს 55%) */
+        .info-side {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .photo-placeholder { 
+            background: #111827; 
+            border: 1px solid #374151; 
+            height: 140px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #4b5563; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            cursor: pointer; 
+        }
+        
+        /* სპეციალური სტილი მხოლოდ პირველი ბლოკისთვის, სადაც 1 ფოტოა */
+        .single-photo {
+            height: 292px; /* 140px + 140px + 12px დაშორება (gap) = ზუსტად ორი ფოტოს სიმაღლე */
+        }
+
+        .photo-placeholder img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+        .photo-placeholder img:hover { transform: scale(1.04); }
+        
+        .text-placeholder { background: #111827; border: 1px solid #374151; padding: 10px 14px; border-radius: 6px; font-size: 14px; color: #e5e7eb; font-weight: 500; min-height: 40px; display: flex; align-items: center; }
+        
+        /* Lightbox (ფოტოს გადიდება) */
+        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(3, 7, 18, 0.95); z-index: 1000; justify-content: center; align-items: center; }
+        .lightbox img { max-width: 92%; max-height: 92%; border-radius: 10px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); animation: zoomIn 0.2s ease-out; }
+        @keyframes zoomIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 1. საწყისი გვერდი -->
+        <div id="home" class="page active" style="justify-content: center; align-items: center; min-height: 80vh;">
+            <div class="login-card">
+                <h1 style="font-size: 18px; margin-bottom: 20px;"> სივრცე არ არის საჯარო.  მხოლოდ პირადი ინფორმაციისთვის</h1>
+                <!-- <a href="#login" class="btn">ავტორიზაცია</a> -->
+            </div>
+        </div>
+
+        <!-- 2. ავტორიზაცია -->
+        <div id="login" class="page">
+            <div class="login-card">
+                <h1>სისტემაში შესვლა</h1>
+                <div class="form-group">
+                    <label>მომხმარებელი:</label>
+                    <div class="text-placeholder" style="font-weight: bold; background: #111827; border-color: #4b5563; justify-content: center;">LTD "ROBATRANZIT"</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">შეიყვანეთ პაროლი:</label>
+                    <input type="password" id="password" placeholder="••••">
+                    <div id="error" class="error-msg">არასწორი პაროლი!</div>
+                </div>
+                <button class="btn" style="width: 100%; margin-top: 10px;" onclick="checkPassword()">შესვლა</button>
+            </div>
+        </div>
+
+        <!-- 3. დეშბორდი -->
+        <div id="dashboard" class="page">
+            <div class="header-panel">
+                <h1 style="margin-bottom: 0; font-size: 24px;">შპს "რობატრანზიტი"</h1>
+                <a href="#" class="btn btn-danger" onclick="logout()">გასვლა</a>
+            </div>
+            
+            <div class="dashboard-grid">
+                <!-- ზედა მწკრივი: ბლოკი 1 და ბლოკი 2 -->
+                <div class="row-box">
+                    <!-- ბლოკი 1 -->
+                    <div class="sub-box">
+                        <h3>პირადობის მონაცემები</h3>
+                        <div class="box-content">
+                            <div class="photo-side">
+                                <!-- კლასი single-photo დარჩა მხოლოდ აქ -->
+                                <div class="photo-placeholder single-photo">
+                                    <img src="images/beka1.jpg" alt="ბექა 1" class="zoomable">
+                                </div>
+                            </div>
+                            <div class="info-side">
+                                <div class="text-placeholder">ბექა</div>
+                                <div class="text-placeholder">ჟვანია</div>
+                                <div class="text-placeholder">60001078604</div>
+                                <div class="text-placeholder">T: 579074933</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ბლოკი 2 -->
+                    <div class="sub-box">
+                        <h3>სატრანსპორტო საშუალება</h3>
+                        <div class="box-content">
+                            <div class="photo-side">
+                                <div class="photo-placeholder">
+                                    <img src="images/beka5.jpg" alt="ბექა 5" class="zoomable">
+                                </div>
+                                <div class="photo-placeholder">
+                                    <img src="images/beka4.jpg" alt="ბექა 4" class="zoomable">
+                                </div>
+                            </div>
+                            <div class="info-side">
+                                <div class="text-placeholder">LL101LU</div>
+                                <div class="text-placeholder">SCANIA</div>
+                                <div class="text-placeholder">უნაგირა საწევარი</div>
+                                <div class="text-placeholder">VIN: VLUR4X20009097710</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ქვედა მწკრივი: ბლოკი 3 და ბლოკი 4 -->
+                <div class="row-box">
+                    <!-- ბლოკი 3 -->
+                    <div class="sub-box">
+                        <h3>მისაბმელი</h3>
+                        <div class="box-content">
+                            <div class="photo-side">
+                                <div class="photo-placeholder">
+                                    <img src="images/beka2.jpg" alt="ბექა 2" class="zoomable">
+                                </div>
+                                <div class="photo-placeholder">
+                                    <img src="images/beka3.jpg" alt="ბექა 3" class="zoomable">
+                                </div>
+                            </div>
+                            <div class="info-side">
+                                <div class="text-placeholder">LV101V</div>
+                                <div class="text-placeholder">SCHMITZ</div>
+                                <div class="text-placeholder">სპეციალური ნახევარმისაბმელი</div>
+                                <div class="text-placeholder">VIN: WSMS6980000402517</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sub-box">
+                        <h3>ანგარიშის რეკვიზიტი</h3>
+                        <div class="box-content">
+                            <div class="photo-side">
+                                <div class="photo-placeholder">
+                                    <img src="images/rekvizrobabog.jpg" alt="rekviziti" class="zoomable">
+                                </div>
+                                <div class="photo-placeholder">
+                                    <img src="images/rekviztbc.jpg" alt="rekviziti" class="zoomable">
+                                </div>
+                            </div>
+                            <div class="info-side">
+                                <div class="text-placeholder">მიმღები: შპს "რობა ტრანზიტი"</div>
+                                <div class="text-placeholder">ს/კ: 412775910</div>
+                                <div class="text-placeholder">BOG: GE47BG0000000553307267</div>
+                                <div class="text-placeholder"> TBC:GE91TB7963936070100001</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="დიდი ფოტო">
+    </div>
+
+    <script>
+        function handleRouting() {
+            const hash = window.location.hash;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            if (hash === '#login') {
+                document.getElementById('login').classList.add('active');
+            } else if (hash === '#dashboard') {
+                if (sessionStorage.getItem('authenticated') !== 'true') { window.location.hash = '#login'; }
+                else { document.getElementById('dashboard').classList.add('active'); }
+            } else { document.getElementById('home').classList.add('active'); }
+        }
+
+        function checkPassword() {
+            if (document.getElementById('password').value === '1111') {
+                document.getElementById('error').style.display = 'none';
+                sessionStorage.setItem('authenticated', 'true');
+                window.location.hash = '#dashboard';
+            } else { document.getElementById('error').style.display = 'block'; }
+        }
+
+        function logout() { sessionStorage.removeItem('authenticated'); window.location.hash = '#login'; }
+
+        // Lightbox კონტროლი
+        document.querySelectorAll('.zoomable').forEach(img => {
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('lightbox-img').src = this.src;
+                document.getElementById('lightbox').style.display = 'flex';
+            });
+        });
+
+        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+        window.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+        window.addEventListener('hashchange', handleRouting);
+        window.addEventListener('load', handleRouting);
+    </script>
+</body>
+</html>

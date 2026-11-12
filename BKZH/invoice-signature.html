@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ინვოისის გენერატორი</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 15px;
+      color: #111;
+    }
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .toolbar {
+      background: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .toolbar h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      padding: 7px 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    button:hover {
+      opacity: 0.88;
+    }
+    .btn-green {
+      background: #1b6b3a;
+      color: #fff;
+      border-color: #1b6b3a;
+    }
+    .btn-blue {
+      background: #1976d2;
+      color: #fff;
+      border-color: #1976d2;
+    }
+    .btn-red {
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .invoice-box {
+      background: #fff;
+      padding: 22px 26px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .header-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-title input {
+      width: 65px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 2px 4px;
+    }
+    .date-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #222;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+    }
+    .field {
+      margin-bottom: 6px;
+    }
+    .field:last-child {
+      margin-bottom: 0;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 2px;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea {
+      width: 100%;
+      padding: 4px 7px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 13px;
+      color: #111;
+      background: #fff;
+    }
+    textarea {
+      resize: none;
+      overflow: hidden;
+      min-height: 28px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.35;
+      display: block;
+    }
+    .print-text {
+      display: none;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      font-size: 13px;
+      line-height: 1.35;
+      color: #111;
+      padding: 2px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      margin-bottom: 12px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #666;
+      padding: 6px 7px;
+      text-align: left;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      font-size: 13px;
+    }
+    th {
+      background: #f5f6f8;
+      font-size: 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .col-num { width: 38px; text-align: center; }
+    .col-desc { width: auto; }
+    .col-price { width: 115px; }
+    .col-qty { width: 65px; }
+    .col-total { width: 115px; }
+    .col-act { width: 42px; text-align: center; }
+
+    .total-section {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .total-section input {
+      width: 120px;
+      text-align: right;
+      font-weight: bold;
+      font-size: 15px;
+      background: #f8f9fa;
+    }
+    .note-section {
+      margin-bottom: 16px;
+    }
+    .note-section label {
+      display: block;
+      font-size: 12px;
+      color: #444;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+    .signature-section {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .sig-preview {
+      width: 160px;
+      height: 55px;
+      border: 1px dashed #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      font-size: 11px;
+      text-align: center;
+      overflow: hidden;
+      background: #fafafa;
+    }
+    .sig-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    #currencySelect {
+  padding: 5px 8px;
+  font-size: 15px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+.printing-mode #currencySelect {
+  display: none !important;
+}
+@media print {
+  #currencySelect {
+    display: none !important;
+  }
+}
+
+
+    /* PDF გენერაციის და ბეჭდვის სუფთა რეჟიმი */
+    .pdf-mode {
+      box-shadow: none !important;
+      padding: 10px !important;
+      border-radius: 0 !important;
+    }
+    .pdf-mode .no-print,
+    .pdf-mode .col-act {
+      display: none !important;
+    }
+    .pdf-mode input,
+    .pdf-mode textarea {
+      display: none !important;
+    }
+    .pdf-mode .print-text {
+      display: block !important;
+    }
+    .pdf-mode .header-title .print-text {
+      display: inline-block !important;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .pdf-mode .sig-preview {
+      border: none !important;
+      background: transparent !important;
+    }
+
+    @media (max-width: 650px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar, .no-print, .col-act { display: none !important; }
+      .invoice-box { box-shadow: none; padding: 5px; }
+      input, textarea { display: none !important; }
+      .print-text { display: block !important; }
+      .header-title .print-text { display: inline-block !important; font-size: 20px; font-weight: bold; }
+      .sig-preview { border: none; background: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="toolbar no-print">
+    <h2>ინვოისის გენერატორი</h2>
+    <div class="btn-group">
+      <button type="button" onclick="addRow()">+ სტრიქონის დამატება</button>
+      <button type="button" class="btn-green" id="pdfBtn" onclick="downloadPDF()">PDF ჩამოტვირთვა</button>
+      <button type="button" onclick="printInvoice()">ბეჭდვა</button>
+      <button type="button" class="btn-blue" onclick="clearForm()">გასუფთავება</button>
+    </div>
+  </div>
+
+  <div class="invoice-box" id="invoice">
+    <div class="header-title">
+      <span>ინვოისი N</span>
+      <input type="text" id="invNumber" value="26">
+      <span class="print-text"></span>
+    </div>
+
+    <div class="date-row">
+      <label for="invDate">თარიღი:</label>
+      <input type="date" id="invDate" style="width: 145px;">
+      <span class="print-text" style="font-weight: 500;"></span>
+    </div>
+
+    <div class="grid-2">
+      <!-- შემსრულებელი -->
+      <div class="card">
+        <h3>შემსრულებელი</h3>
+        <div class="field">
+          <label>სახელი / დასახელება</label>
+          <textarea rows="1" oninput="autoResize(this)" readonly>ი.მ ნინო ჟვანია</textarea>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>ს/კ</label>
+          <input type="text" value="60001078665" readonly>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>ტელეფონი</label>
+          <input type="text" value="+995 579 07 49 33" readonly>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>ბანკი</label>
+          <textarea rows="1" oninput="autoResize(this)" readonly>TBC / საქართველო</textarea>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>ანგარიშის ნომერი</label>
+          <input type="text" value="GE92TB7640745064300105/GE52BG0000000366117644" readonly>
+          <div class="print-text"></div>
+        </div>
+      </div>
+
+      <!-- ტრანსპორტი / მძღოლი -->
+      <div class="card">
+        <h3>ტრანსპორტი / მძღოლი</h3>
+        <div class="field">
+          <label>მანქანა (მარკა)</label>
+          <input type="text" value="SCANIA" readonly>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>სახ. ნომერი</label>
+          <input type="text" value="LL101LU" readonly>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>მისაბმელის სახ. ნომერი</label>
+          <input type="text" value="LV101V" readonly>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>საიდენტიფიკაციო</label>
+          <textarea rows="1" oninput="autoResize(this)" readonly>VLUR4X20009097710</textarea>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>მძღოლი</label>
+          <textarea rows="1" oninput="autoResize(this)" readonly>ბექა ჟვანია პ/ნ 60001078604 </textarea>
+          <div class="print-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- მყიდველი -->
+    <div class="card">
+      <h3>მყიდველი</h3>
+      <div class="grid-2" style="margin-bottom: 0;">
+        <div class="field">
+          <label>შპს / კომპანია</label>
+          <textarea rows="1" oninput="autoResize(this)">Cargo Logist Group</textarea>
+          <div class="print-text"></div>
+        </div>
+        <div class="field">
+          <label>ს/კ</label>
+          <input type="text" value="400341741">
+          <div class="print-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- მომსახურების ცხრილი -->
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th class="col-num">N</th>
+          <th class="col-desc">დასახელება</th>
+          <th class="col-price">ერთეულის ღირებულება</th>
+          <th class="col-qty">რაოდ.</th>
+          <th class="col-total">მომსახურების ღირებულება</th>
+          <th class="col-act no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td class="col-num">1</td>
+          <td class="col-desc">
+            <textarea rows="2" oninput="autoResize(this)">სატრანსპორტო მომსახურება ბაქო-თბილისი კომბინირებული ტრანსპორტით, კონტეინერის ნომერი: E 1880817</textarea>
+            <div class="print-text"></div>
+          </td>
+          <td class="col-price">
+            <input type="number" step="0.01" value="850.00" oninput="calculateTotals()">
+            <div class="print-text" style="text-align: right;"></div>
+          </td>
+          <td class="col-qty">
+            <input type="number" step="1" value="1" oninput="calculateTotals()">
+            <div class="print-text" style="text-align: center;"></div>
+          </td>
+          <td class="col-total">
+            <input type="text" class="row-total" value="850.00" readonly>
+            <div class="print-text" style="text-align: right; font-weight: 500;"></div>
+          </td>
+          <td class="col-act no-print"><button type="button" class="btn-red" onclick="deleteRow(this)">✕</button></td>
+        </tr>
+        <tr>
+          <td class="col-num">2</td>
+          <td class="col-desc">
+            <textarea rows="1" oninput="autoResize(this)">განაცდურის ანაზღაურება</textarea>
+            <div class="print-text"></div>
+          </td>
+          <td class="col-price">
+            <input type="number" step="0.01" value="300.00" oninput="calculateTotals()">
+            <div class="print-text" style="text-align: right;"></div>
+          </td>
+          <td class="col-qty">
+            <input type="number" step="1" value="1" oninput="calculateTotals()">
+            <div class="print-text" style="text-align: center;"></div>
+          </td>
+          <td class="col-total">
+            <input type="text" class="row-total" value="300.00" readonly>
+            <div class="print-text" style="text-align: right; font-weight: 500;"></div>
+          </td>
+          <td class="col-act no-print"><button type="button" class="btn-red" onclick="deleteRow(this)">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- სულ ჯამი -->
+    <div class="total-section">
+      <span>სულ ჯამი:</span>
+      <input type="text" id="grandTotal" value="1150.00" readonly>
+      <span class="print-text" style="font-size: 15px; font-weight: bold;"></span>
+      <select id="currencySelect" onchange="updateCurrency()">
+        <option value="აშშ დოლარი" selected>აშშ დოლარი</option>
+        <option value="ლარი">ლარი</option>
+      </select>
+    </div>
+
+    <!-- შენიშვნა -->
+    <div class="note-section">
+      <label>შენიშვნა / გადახდის პირობა</label>
+      <textarea rows="1" oninput="autoResize(this)">ანგარიშსწორება წარმოებს ლარში, გადახდის დღისთვის ეროვნული ბანკის მიერ გაცვლითი კურსის მიხედვით</textarea>
+      <div class="print-text"></div>
+    </div>
+
+    <!-- ხელმოწერა -->
+    <div class="signature-section">
+      <strong>ხელმოწერა:</strong>
+      <div class="sig-preview" id="sigPreview">
+        <img src="nin.svg" alt="ხელმოწერა">
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // მიმდინარე თარიღის დაყენება
+  document.getElementById('invDate').valueAsDate = new Date();
+
+  // ტექსტის ველის კომპაქტური ავტო-გაზრდა
+  function autoResize(el) {
+    el.style.height = '28px';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  // მნიშვნელობების გადატანა საბეჭდ/PDF ელემენტებში (სრული Wrap-ისთვის)
+  function syncPrintValues() {
+    document.querySelectorAll('#invoice input, #invoice textarea').forEach(el => {
+      if (el.type === 'file') return;
+      const mirror = el.nextElementSibling;
+      if (mirror && mirror.classList.contains('print-text')) {
+        if (el.type === 'date' && el.value) {
+          const parts = el.value.split('-');
+          mirror.textContent = `${parts[2]}.${parts[1]}.${parts[0]}`;
+        } else {
+          mirror.textContent = el.value;
+        }
+      }
+    });
+  }
+
+  // ახალი სტრიქონის დამატება
+  function addRow() {
+    const tbody = document.getElementById('tableBody');
+    const rowCount = tbody.rows.length + 1;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="col-num">${rowCount}</td>
+      <td class="col-desc">
+        <textarea rows="1" oninput="autoResize(this)" placeholder="მომსახურების დასახელება..."></textarea>
+        <div class="print-text"></div>
+      </td>
+      <td class="col-price">
+        <input type="number" step="0.01" value="0.00" oninput="calculateTotals()">
+        <div class="print-text" style="text-align: right;"></div>
+      </td>
+      <td class="col-qty">
+        <input type="number" step="1" value="1" oninput="calculateTotals()">
+        <div class="print-text" style="text-align: center;"></div>
+      </td>
+      <td class="col-total">
+        <input type="text" class="row-total" value="0.00" readonly>
+        <div class="print-text" style="text-align: right; font-weight: 500;"></div>
+      </td>
+      <td class="col-act no-print"><button type="button" class="btn-red" onclick="deleteRow(this)">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    calculateTotals();
+  }
+
+  // სტრიქონის წაშლა
+  function deleteRow(btn) {
+    const row = btn.closest('tr');
+    row.remove();
+    updateRowNumbers();
+    calculateTotals();
+  }
+
+  // ნუმერაციის განახლება
+  function updateRowNumbers() {
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach((row, index) => {
+      row.querySelector('.col-num').textContent = index + 1;
+    });
+  }
+
+  // ჯამების დათვლა
+  function calculateTotals() {
+    let grandTotal = 0;
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach(row => {
+      const price = parseFloat(row.querySelector('.col-price input').value) || 0;
+      const qty = parseFloat(row.querySelector('.col-qty input').value) || 0;
+      const total = price * qty;
+      row.querySelector('.row-total').value = total.toFixed(2);
+      grandTotal += total;
+    });
+    document.getElementById('grandTotal').value = grandTotal.toFixed(2);
+  }
+
+  // ხელმოწერის ატვირთვა
+  function loadSignature(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('sigPreview').innerHTML = `<img src="${e.target.result}" alt="ხელმოწერა">`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ხელმოწერის წაშლა
+  function clearSignature() {
+    document.getElementById('sigInput').value = '';
+    document.getElementById('sigPreview').innerHTML = 'ხელმოწერის ნიმუში აქ გამოჩნდება';
+  }
+
+  // ბეჭდვა
+  function printInvoice() {
+    syncPrintValues();
+    window.print();
+  }
+
+  // პირდაპირი PDF ჩამოტვირთვა
+  function downloadPDF() {
+    syncPrintValues();
+    const element = document.getElementById('invoice');
+    const invNum = document.getElementById('invNumber').value || '1';
+    const btn = document.getElementById('pdfBtn');
+    
+    const hasSig = document.querySelector('#sigPreview img');
+    const sigBox = document.getElementById('sigPreview');
+    const originalSigText = sigBox.innerHTML;
+    if (!hasSig) sigBox.innerHTML = '';
+
+    element.classList.add('pdf-mode');
+    btn.textContent = 'მზადდება...';
+    btn.disabled = true;
+
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     `Invoice_N_${invNum}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    if (typeof html2pdf !== 'undefined') {
+      html2pdf().set(opt).from(element).save().then(() => {
+        element.classList.remove('pdf-mode');
+        if (!hasSig) sigBox.innerHTML = originalSigText;
+        btn.textContent = 'PDF ჩამოტვირთვა';
+        btn.disabled = false;
+      }).catch(() => {
+        element.classList.remove('pdf-mode');
+        if (!hasSig) sigBox.innerHTML = originalSigText;
+        btn.textContent = 'PDF ჩამოტვირთვა';
+        btn.disabled = false;
+        window.print();
+      });
+    } else {
+      element.classList.remove('pdf-mode');
+      if (!hasSig) sigBox.innerHTML = originalSigText;
+      btn.textContent = 'PDF ჩამოტვირთვა';
+      btn.disabled = false;
+      window.print();
+    }
+  }
+
+  // ყველა ველის გასუფთავება
+  function clearForm() {
+    if (!confirm('ნამდვილად გსურთ ყველა ველის გასუფთავება?')) return;
+    document.querySelectorAll('#invoice input[type="text"], #invoice textarea').forEach(el => {
+      if (!el.readOnly) {
+        el.value = '';
+        if (el.tagName === 'TEXTAREA') autoResize(el);
+      }
+    });
+    document.querySelectorAll('#invoice input[type="number"]').forEach(el => el.value = '0');
+    calculateTotals();
+    clearSignature();
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea').forEach(autoResize);
+  });
+  function updateCurrency() {
+  const select = document.getElementById('currencySelect');
+  document.getElementById('currencyPrint').textContent = select.value;
+}
+
+</script>
+
+</body>
+</html>
